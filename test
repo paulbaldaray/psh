@@ -1,0 +1,53 @@
+#!/bin/python3
+from os import *
+from psh_parse import *
+from psh_builtins import *
+from psh_types import *
+
+def test(function_name: str, compare, to_str, input, output):
+  f = eval(function_name)
+  ans = f(input)
+  print(f'Testing {function_name} with ({input}) -> ', end='')
+  if compare(ans, output):
+    print('Success')
+  else:
+    print(f'Failure\n\tExpected {to_str(output)}\n\tReturned {to_str(ans)}')
+
+###### BEGIN PARSE ######
+def compare_job(j1: Job, j2: Job):
+  if (j1 == None or j2 == None):
+    return j1 == j2
+  return j1.args == j2.args and \
+    j1.infile == j2.infile and \
+    j1.outfile == j2.infile and \
+    compare_job(j1.next, j2.next)
+
+def to_str_job(j: Job):
+  if (j == None):
+    return 'None'
+  return f'{{{j.args},{j.infile},{j.outfile},{to_str_job(j.next)}}}'
+
+cmd = 'cmd arg1 arg2 arg3'
+res = Job(["cmd", "arg1", "arg2", "arg3"])
+test('parse', compare_job, to_str_job, cmd, res)
+
+environ['VAR0'] = "some environment variable"
+cmd = '$VAR0 $VAR0 regular_arg'
+res = Job(['some environment variable', 'some environment variable',
+  'regular_arg'])
+test('parse', compare_job, to_str_job, cmd, res)
+
+environ['VAR_1'] = " secret word"
+cmd = 'an_argument$VAR_1$VAR_1 regular_arg'
+res = Job(["an_argument secret word secret word", "regular_arg"])
+test('parse', compare_job, to_str_job, cmd, res)
+
+environ['VAR_2'] = "/home/some_usr"
+cmd = 'cmd $VAR_2/some_file'
+res = Job(["cmd", "/home/some_usr/some_file"])
+test('parse', compare_job, to_str_job, cmd, res)
+
+cmd = 'cmd $ endwith$'
+res = Job(["cmd", "$", "endwith$"])
+test('parse', compare_job, to_str_job, cmd, res)
+###### END PARSE ######

@@ -50,4 +50,21 @@ test('parse', compare_job, to_str_job, cmd, res)
 cmd = 'cmd $ endwith$'
 res = Job(["cmd", "$", "endwith$"])
 test('parse', compare_job, to_str_job, cmd, res)
+
+cmd = " cmd 'Hello does this work?' maybe "
+res = Job(["cmd", "Hello does this work?", "maybe"])
+test('parse', compare_job, to_str_job, cmd, res)
+
+cmd = " cmd left' \\'middle\\' 'right "
+res = Job(["cmd", "left 'middle' right"])
+test('parse', compare_job, to_str_job, cmd, res)
+
+environ['home'] = "/home/user"
+cmd = ' cmd "My home is \\"$home\\""'
+res = Job(["cmd", "My home is \"/home/user\""])
+test('parse', compare_job, to_str_job, cmd, res)
+
+cmd = 'someword"$VAR_1, $VAR_2"$home'
+res = Job(["someword secret word, /home/some_usr/home/user"])
+test('parse', compare_job, to_str_job, cmd, res)
 ###### END PARSE ######
